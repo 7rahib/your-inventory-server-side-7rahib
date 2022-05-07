@@ -18,12 +18,27 @@ async function run() {
         await client.connect()
         const inventoryCollection = client.db('yourInventory').collection('inventory')
 
-        // Getting All Items
+        // Getting All Items with pagination
         app.get('/inventory', async (req, res) => {
             const query = {}
+            const page = parseInt(req.query.page)
+            const size = parseInt(req.query.size)
             const cursor = inventoryCollection.find(query)
-            const inventories = await cursor.toArray()
-            res.send(inventories)
+            let inventory;
+            if (page || size) {
+                inventory = await cursor.skip(page * size).limit(size).toArray()
+            }
+            else {
+                inventory = await cursor.toArray()
+            }
+
+            res.send(inventory)
+        })
+
+        // Getting inventory count for pagination
+        app.get('/inventorycount', async (req, res) => {
+            const count = await inventoryCollection.estimatedDocumentCount()
+            res.send({ count })
         })
 
         // Getting Individual Item
